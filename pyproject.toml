@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "aura-rag"
+version = "0.1.0"
+description = "Self-Reflective RAG Agent for Ethiopian Commercial Code"
+authors = ["Admin"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+langchain = "^0.3"
+langchain-community = "^0.3"
+langchain-ollama = "^0.2"
+langchain-openai = "^0.2" # OpenRouter uses OpenAI's SDK protocol
+langgraph = "^0.2"
+faiss-cpu = "^1.8.0"
+pypdf = "^5.0"
+python-dotenv = "^1.0"
+rich = "^13.9" # For the Amazing CLI
+tiktoken = "^0.8"
+cryptography = "^46.0.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
