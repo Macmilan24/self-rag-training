@@ -8,7 +8,7 @@ from src.config import Config
 
 def decide_to_generate(state: GraphState):
     filtered_documents = state["documents"]
-    current_retries = state.get("retry_count", 0)
+    current_retries = state.get("retrival_retries", 0)
 
     # HARD STOP to prevent RecursionError
     if current_retries >= Config.MAX_RETRIES:
@@ -25,11 +25,12 @@ def grade_generation_v_documents_and_question(state: GraphState):
     """
     Decides if the generation is good enough.
     """
-    current_retries = state.get("retry_count", 0)
+    gen_attempts = state.get("generation_retries", 0)
 
-    if current_retries >= Config.MAX_RETRIES:
-
-        logger.warning("--- DECISION: MAX RETRIES REACHED -> ACCEPTING ANSWER ---")
+    if gen_attempts >= Config.MAX_RETRIES:
+        logger.warning(
+            "--- DECISION: ANSWER NOT USEFUL BUT MAX RETRIES REACHED -> ACCEPTING BEST-EFFORT ---"
+        )
         return "useful"
 
     res = hallucination_grader.invoke(
@@ -42,8 +43,20 @@ def grade_generation_v_documents_and_question(state: GraphState):
         if res_util["score"] >= 4:
             return "useful"
         else:
-            return "not useful"  # Goes to transform_query
+            if state["retrival_retries"] >= Config.MAX_RETRIES:
+                return "useful"
+            return "not useful"
     else:
+        if gen_attempts >= Config.MAX_RETRIES:
+            if state["retrival_retries"] >= Config.MAX_RETRIES:
+                logger.warning(
+                    "--- DECISION: HALLUCINATION SUSPECTED BUT ALL BUDGETS EXHAUSTED -> ACCEPTING BEST-EFFORT ---"
+                )
+                return "useful"
+            logger.warning(
+                "--- DECISION: HALLUCINATION SUSPECTED AND GEN RETRIES EXHAUSTED -> TRYING QUERY REWRITE ---"
+            )
+            return "not useful"
         return "not supported"
 
 

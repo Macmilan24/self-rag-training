@@ -16,4 +16,4 @@ def get_retriever():
         allow_dangerous_deserialization=True,
     )
 
-    return vectorstore.as_retriever(search_kwargs={"k": 10})
+    return vectorstore.as_retriever(search_kwargs={"k": 5})

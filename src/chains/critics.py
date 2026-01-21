@@ -1,8 +1,10 @@
 import json
 import re
+from functools import partial
 from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import StrOutputParser
 from src.config import Config
+from src.logger_setup import logger
 from src.utils.prompts import (
     REWRITE_PROMPT,
     GRADE_DOCS_PROMPT,
@@ -29,8 +31,26 @@ def parse_output(ai_message):
         return {"score": score, "reasoning": "Parsing failed, but score extracted."}
 
 
+def parse_output_and_log(name, ai_message):
+    """
+    Parses output and logs the score/reasoning.
+    Used for partial application in chains.
+    """
+    res = parse_output(ai_message)
+    logger.info(
+        f"--- {name} ---: Score {res.get('score')} | Reasoning: {res.get('reasoning')}"
+    )
+    return res
+
+
 question_rewriter = REWRITE_PROMPT | llm_text | StrOutputParser()
 
 retrieval_grader = GRADE_DOCS_PROMPT | llm | parse_output
-hallucination_grader = GRADE_HALLUCINATIONS_PROMPT | llm | parse_output
-answer_grader = GRADE_ANSWER_PROMPT | llm | parse_output
+hallucination_grader = (
+    GRADE_HALLUCINATIONS_PROMPT
+    | llm
+    | partial(parse_output_and_log, "HALLUCINATION GRADER")
+)
+answer_grader = (
+    GRADE_ANSWER_PROMPT | llm | partial(parse_output_and_log, "ANSWER GRADER")
+)
